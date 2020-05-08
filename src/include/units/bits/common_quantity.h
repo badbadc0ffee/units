@@ -23,11 +23,10 @@
 #pragma once
 
 #include <units/bits/dimension_op.h>
+#include <units/bits/equivalent.h>
+#include <units/quantity_cast.h>
 
 namespace units {
-
-template<Dimension D, UnitOf<D> U, Scalar Rep>
-class quantity;
 
 namespace detail {
 
@@ -52,15 +51,16 @@ struct common_quantity_impl<quantity<D1, U1, Rep1>, quantity<D2, U2, Rep2>, Rep>
 
 template<typename D1, typename U1, typename Rep1, typename D2, typename U2, typename Rep2, typename Rep>
 struct common_quantity_impl<quantity<D1, U1, Rep1>, quantity<D2, U2, Rep2>, Rep> {
-  using ratio1 = ratio_multiply<typename D1::base_units_ratio, typename U1::ratio>;
-  using ratio2 = ratio_multiply<typename D2::base_units_ratio, typename U2::ratio>;
-  using type = quantity<D1, downcast_unit<D1, common_ratio<ratio1, ratio2>>, Rep>;
+  using dimension = conditional<is_instantiation<D1, unknown_dimension>, D2, D1>;
+  using ratio1 = U1::ratio;
+  using ratio2 = U2::ratio;
+  using type = quantity<dimension, downcast_unit<dimension, common_ratio<ratio1, ratio2>>, Rep>;
 };
 
 }  // namespace detail
 
 template<Quantity Q1, Quantity Q2, Scalar Rep = std::common_type_t<typename Q1::rep, typename Q2::rep>>
-  requires equivalent_dim<typename Q1::dimension, typename Q2::dimension>
+  requires equivalent<typename Q1::dimension, typename Q2::dimension>
 using common_quantity = detail::common_quantity_impl<Q1, Q2, Rep>::type;
 
 }  // namespace units

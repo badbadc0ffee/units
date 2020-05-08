@@ -29,6 +29,11 @@
 
 namespace units {
 
+template<Dimension D, UnitOf<D> U, Scalar Rep>
+class quantity;
+
+namespace detail {
+
 constexpr std::intmax_t ipow10(std::intmax_t exp)
 {
   assert(exp >= 0);
@@ -60,10 +65,27 @@ constexpr long double fpow10(std::intmax_t exp)
   return result;
 }
 
+template<Dimension D, Unit U>
+struct quantity_ratio_impl;
+
+template<BaseDimension D, Unit U>
+struct quantity_ratio_impl<D, U> {
+  using type = ratio_divide<typename U::ratio, typename D::base_unit::ratio>;
+};
+
+template<DerivedDimension D, Unit U>
+struct quantity_ratio_impl<D, U> {
+  using type = ratio_multiply<typename D::base_units_ratio, ratio_divide<typename U::ratio, typename D::coherent_unit::ratio>>;
+};
+
+template<Quantity Q>
+using quantity_ratio = quantity_ratio_impl<typename Q::dimension, typename Q::unit>::type;
+
+} // namespace detail
 
 // QuantityOf
 template<typename T, typename Dim>
-concept QuantityOf = Quantity<T> && Dimension<Dim> && equivalent_dim<typename T::dimension, Dim>;
+concept QuantityOf = Quantity<T> && Dimension<Dim> && equivalent<typename T::dimension, Dim>;
 
 // quantity_cast
 namespace detail {
@@ -305,9 +327,7 @@ struct cast_ratio<FromD, FromU, ToD, ToU> {
 
 template<DerivedDimension FromD, Unit FromU, DerivedDimension ToD, Unit ToU>
 struct cast_ratio<FromD, FromU, ToD, ToU> {
-  using from_ratio = ratio_multiply<typename FromD::base_units_ratio, typename FromU::ratio>;
-  using to_ratio = ratio_multiply<typename ToD::base_units_ratio, typename ToU::ratio>;
-  using type = ratio_divide<from_ratio, to_ratio>;
+  using type = ratio_divide<typename quantity_ratio_impl<FromD, FromU>::type, typename quantity_ratio_impl<ToD, ToU>::type>;
 };
 
 }  // namespace detail
@@ -350,7 +370,7 @@ template<Quantity To, typename D, typename U, typename Rep>
  */
 template<Dimension ToD, typename D, typename U, typename Rep>
 [[nodiscard]] constexpr auto quantity_cast(const quantity<D, U, Rep>& q)
-  requires equivalent_dim<ToD, D>
+  requires equivalent<ToD, D>
 {
   return quantity_cast<quantity<ToD, dimension_unit<ToD>, Rep>>(q);
 }

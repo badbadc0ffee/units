@@ -54,7 +54,7 @@ struct base_units_ratio_impl<exp_list<E>> {
 /**
  * @brief Calculates the common ratio of all the references of base units in the derived dimension
  */
-template<typename D>
-using base_units_ratio = base_units_ratio_impl<typename D::exponents>::type;
+template<typename ExpList>
+using base_units_ratio = base_units_ratio_impl<ExpList>::type;
 
 }  // namespace units::detail

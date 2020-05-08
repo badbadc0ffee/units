@@ -79,10 +79,10 @@ using make_dimension = to_derived_dimension_base<typename dim_consolidate<type_l
  * @tparam ERest the list of exponents of ingredient dimensions
  */
 template<typename Child, Unit U, Exponent E, Exponent... ERest>
-struct derived_dimension : downcast_child<Child, typename detail::make_dimension<E, ERest...>> {
+struct derived_dimension : downcast_dispatch<Child, typename detail::make_dimension<E, ERest...>> {
   using recipe = exp_list<E, ERest...>;
   using coherent_unit = U;
-  using base_units_ratio = detail::base_units_ratio<derived_dimension>;
+  using base_units_ratio = detail::base_units_ratio<typename derived_dimension::exponents>;
 };
 
 }  // namespace units
